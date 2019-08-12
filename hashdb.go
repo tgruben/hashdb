@@ -1,4 +1,5 @@
 package hashdb
+
 //heavily inspired by https://github.com/luispedro/diskhash
 
 import (
@@ -357,10 +358,10 @@ const (
 func (e *Entry) IsEmpty() bool {
 	return e.flags&1 == 0
 }
-func OpenIndex(path string)(*Db,error){
-     db:=&Db{fileName:path}
-	err:=db.Open()
-	return db,err
+func OpenIndex(path string) (*Db, error) {
+	db := &Db{fileName: path}
+	err := db.Open()
+	return db, err
 }
 
 type Db struct {
@@ -378,6 +379,7 @@ func (db *Db) FileName() string {
 }
 
 func (db *Db) Open() error {
+	fmt.Println("OPEN", db.FileName)
 	f, err := os.OpenFile(db.fileName, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return err
@@ -388,6 +390,7 @@ func (db *Db) open(f *os.File) error {
 	db.fd = int(f.Fd())
 	db.file = f
 	st, err := db.file.Stat()
+	fmt.Println("STAT", st.Size(), f.Name())
 	if err != nil {
 		return err
 	}
@@ -418,6 +421,7 @@ func (db *Db) mmap(size int) error {
 	head := &db.data[0]
 	db.slotsUsed = &head.Key
 	db.totalSlots = uint64(size/24) - 1
+	fmt.Println("SETTING SLOTS", db.totalSlots)
 	return nil
 }
 func (db *Db) incrSlots() {
