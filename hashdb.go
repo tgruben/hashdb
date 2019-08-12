@@ -1,4 +1,5 @@
 package hashdb
+//heavily inspired by https://github.com/luispedro/diskhash
 
 import (
 	"encoding/binary"
