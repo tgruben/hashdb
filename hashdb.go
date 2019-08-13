@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"reflect"
 	"syscall"
 	"unsafe"
@@ -334,7 +335,6 @@ var rtable = []uint64{
 }
 
 func getNewSizeForSlots(numSlots uint64) uint64 {
-	fmt.Println("NumSLots", numSlots)
 	minSlots := numSlots*2 + 1
 	i := uint64(0)
 	for primes[i] < minSlots {
@@ -353,8 +353,7 @@ type Entry struct {
 }
 
 const (
-	//DEFAULT_SLOT = 968593
-	DEFAULT_SLOT = 11
+	DEFAULT_SLOT = 114864059
 )
 
 func (e *Entry) IsEmpty() bool {
@@ -381,7 +380,6 @@ func (db *Db) FileName() string {
 }
 
 func (db *Db) Open() error {
-	fmt.Println("OPEN", db.FileName())
 	f, err := os.OpenFile(db.fileName, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return err
@@ -392,7 +390,6 @@ func (db *Db) open(f *os.File) error {
 	db.fd = int(f.Fd())
 	db.file = f
 	st, err := db.file.Stat()
-	fmt.Println("STAT", st.Size(), f.Name())
 	if err != nil {
 		return err
 	}
@@ -423,8 +420,6 @@ func (db *Db) mmap(size int) error {
 	head := &db.data[0]
 	db.slotsUsed = &head.Key
 	db.totalSlots = uint64(size/24) - 1
-	fmt.Println("SETTING SLOTS", db.totalSlots)
-	fmt.Println("Header Len", header.Len)
 	return nil
 }
 func (db *Db) incrSlots() {
@@ -442,9 +437,9 @@ func (db *Db) Close() error {
 func (db *Db) entryAt(idx int) *Entry {
 	return &db.data[idx]
 }
-func genTempTable(size uint64) (*Db, error) {
+func genTempTable(size uint64, dir string) (*Db, error) {
 	db := &Db{}
-	f, err := ioutil.TempFile("", "ht")
+	f, err := ioutil.TempFile(dir, "ht")
 	if err != nil {
 		return nil, err
 	}
@@ -458,19 +453,20 @@ func genTempTable(size uint64) (*Db, error) {
 func (db *Db) scale(newSlotSize uint64) {
 	fmt.Println("RESCALE", newSlotSize)
 	size := getNewSizeForSlots(newSlotSize)
-	newTable, _ := genTempTable(size)
+	dir, _ := filepath.Abs(filepath.Dir(db.file.Name()))
+	newTable, _ := genTempTable(size, dir)
 	for slot := range db.data[1:] {
 		if !db.data[slot].IsEmpty() {
 			newTable.Upsert(&db.data[slot])
 		}
 	}
-	fmt.Println("REPLACE")
 	newTable.Close()
 	db.Close()
-	os.Rename(newTable.FileName(), db.FileName())
-	fmt.Println("OPEN")
+	err := os.Rename(newTable.FileName(), db.FileName())
+	if err != nil {
+		panic(err)
+	}
 	db.Open()
-	fmt.Println("DONE")
 }
 
 func (db *Db) hashKey(before uint64) uint64 {

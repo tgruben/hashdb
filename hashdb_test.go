@@ -65,7 +65,7 @@ func Test_db_scale(t *testing.T) {
 		Offset: 16,
 		Length: 15,
 	})
-	db.scale(56)
+	db.scale(1646609)
 	db.Close()
 	if err := db.Open(); err != nil {
 		t.Errorf("db.open() error = %v", err)
