@@ -334,7 +334,8 @@ var rtable = []uint64{
 }
 
 func getNewSizeForSlots(numSlots uint64) uint64 {
-	minSlots := numSlots * 2
+	fmt.Println("NumSLots", numSlots)
+	minSlots := numSlots*2 + 1
 	i := uint64(0)
 	for primes[i] < minSlots {
 		i++
@@ -352,7 +353,8 @@ type Entry struct {
 }
 
 const (
-	DEFAULT_SLOT = 968593
+	//DEFAULT_SLOT = 968593
+	DEFAULT_SLOT = 11
 )
 
 func (e *Entry) IsEmpty() bool {
@@ -379,7 +381,7 @@ func (db *Db) FileName() string {
 }
 
 func (db *Db) Open() error {
-	fmt.Println("OPEN", db.FileName)
+	fmt.Println("OPEN", db.FileName())
 	f, err := os.OpenFile(db.fileName, os.O_CREATE|os.O_RDWR, 0644)
 	if err != nil {
 		return err
@@ -422,6 +424,7 @@ func (db *Db) mmap(size int) error {
 	db.slotsUsed = &head.Key
 	db.totalSlots = uint64(size/24) - 1
 	fmt.Println("SETTING SLOTS", db.totalSlots)
+	fmt.Println("Header Len", header.Len)
 	return nil
 }
 func (db *Db) incrSlots() {
